@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privat Notat-AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0c0a;
+    --bg2: #141210;
+    --bg3: #1c1916;
+    --bg4: #252119;
+    --border: #2e2820;
+    --border2: #3d3428;
+    --amber: #d4952a;
+    --amber-dim: #8a5f18;
+    --amber-glow: rgba(212, 149, 42, 0.12);
+    --text: #e8dcc8;
+    --text-dim: #9a8c78;
+    --text-muted: #5c5144;
+    --green: #6eb87a;
+    --red: #c26060;
+    --mono: 'JetBrains Mono', monospace;
+    --serif: 'Lora', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --radius: 10px;
+    --sidebar-w: 300px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .logo-mark {
+    width: 34px; height: 34px;
+    border: 1.5px solid var(--amber);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--amber);
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.01em;
+  }
+
+  header p {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 300;
+  }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: background 0.3s;
+  }
+  .status-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.error { background: var(--red); }
+
+  .status-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+
+  /* Modell-velger */
+  select {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  select:focus { border-color: var(--amber-dim); }
+
+  /* ── Layout ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Chat ── */
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .meldinger {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scroll-behavior: smooth;
+  }
+  .meldinger::-webkit-scrollbar { width: 4px; }
+  .meldinger::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* Tom tilstand */
+  .tom-tilstand {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    padding: 40px;
+    animation: fadeIn 0.5s ease;
+  }
+  .tom-tilstand .stor-logo {
+    font-family: var(--serif);
+    font-size: 48px;
+    color: var(--amber);
+    opacity: 0.3;
+    margin-bottom: 8px;
+  }
+  .tom-tilstand h2 {
+    font-family: var(--serif);
+    font-size: 22px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+  .tom-tilstand p {
+    font-size: 13px;
+    color: var(--text-muted);
+    max-width: 320px;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .forslag-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 16px;
+    max-width: 480px;
+    width: 100%;
+  }
+  .forslag-knapp {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.4;
+    transition: all 0.15s;
+  }
+  .forslag-knapp:hover {
+    border-color: var(--amber-dim);
+    color: var(--amber);
+    background: var(--amber-glow);
+  }
+
+  /* Meldinger */
+  .melding {
+    display: flex;
+    gap: 12px;
+    animation: slideIn 0.25s ease;
+    max-width: 720px;
+  }
+  .melding.bruker { flex-direction: row-reverse; align-self: flex-end; }
+  .melding.assistent { align-self: flex-start; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+
+  .avatar {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .avatar.bruker-avatar {
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    color: var(--text-dim);
+  }
+  .avatar.ai-avatar {
+    background: var(--amber-glow);
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-family: var(--serif);
+    font-weight: 600;
+  }
+
+  .boble {
+    max-width: 560px;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.65;
+    font-weight: 300;
+  }
+  .bruker .boble {
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    border-bottom-right-radius: 3px;
+  }
+  .assistent .boble {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 3px;
+  }
+
+  .boble p { margin-bottom: 8px; }
+  .boble p:last-child { margin-bottom: 0; }
+
+  /* Streaming cursor */
+  .skriving::after {
+    content: "▋";
+    color: var(--amber);
+    animation: blink 0.8s step-end infinite;
+    font-size: 12px;
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* Input-omr.de */
+  .input-omrade {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+
+  .input-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 10px 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-wrapper:focus-within {
+    border-color: var(--amber-dim);
+    box-shadow: 0 0 0 3px var(--amber-glow);
+  }
+
+  textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 300;
+    resize: none;
+    min-height: 22px;
+    max-height: 140px;
+    line-height: 1.5;
+  }
+  textarea::placeholder { color: var(--text-muted); }
+
+  .send-knapp {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    background: var(--amber);
+    border: none;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    color: var(--bg);
+  }
+  .send-knapp:hover { background: #e8a835; transform: scale(1.05); }
+  .send-knapp:disabled { background: var(--bg4); color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+  .input-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 8px;
+    font-family: var(--mono);
+  }
+
+  /* ── Kilde-panel ── */
+  .kilde-panel {
+    width: var(--sidebar-w);
+    border-left: 1px solid var(--border);
+    background: var(--bg2);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: width 0.3s ease;
+  }
+  .kilde-panel.skjult { width: 0; border: none; }
+
+  .panel-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .panel-header span {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .panel-header button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .panel-header button:hover { color: var(--text); }
+
+  .kilder-liste {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .kilder-liste::-webkit-scrollbar { width: 3px; }
+  .kilder-liste::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .ingen-kilder {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .kilde-kort {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    animation: fadeIn 0.3s ease;
+  }
+  .kilde-kort:hover {
+    border-color: var(--amber-dim);
+    background: var(--amber-glow);
+  }
+
+  .kilde-tittel {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--amber);
+    margin-bottom: 4px;
+    font-family: var(--serif);
+    font-style: italic;
+  }
+  .kilde-fil {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .kilde-utdrag {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-weight: 300;
+  }
+  .kilde-score {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .score-bar {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .score-fill {
+    height: 100%;
+    background: var(--amber);
+    border-radius: 1px;
+    transition: width 0.5s ease;
+  }
+  .score-tall {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+  }
+
+  /* Feil-toast */
+  .feil-melding {
+    background: rgba(194, 96, 96, 0.1);
+    border: 1px solid rgba(194, 96, 96, 0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #e08080;
+    margin: 0 20px;
+  }
+
+  /* Toggle knapp */
+  .panel-toggle {
+    position: absolute;
+    right: 20px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--mono);
+    transition: all 0.15s;
+  }
+  .panel-toggle:hover { color: var(--amber); border-color: var(--amber-dim); }
+
+  .chunks-badge {
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    color: var(--text-muted);
+    font-size: 10px;
+    font-family: var(--mono);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    align-self: flex-start;
+  }
+
+  @media (max-width: 640px) {
+    .kilde-panel { display: none; }
+    .forslag-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">ℓ</div>
+  <div>
+    <h1>Privat Notat-AI</h1>
+    <p>Lokal RAG &mdash; ingen sky, ingen deling</p>
+  </div>
+  <div class="header-right">
+    <div class="status-dot" id="statusDot"></div>
+    <span class="status-label" id="statusLabel">kobler til...</span>
+    <select id="modellVelger" title="Velg Ollama-modell"></select>
+    <button class="panel-toggle" onclick="togglePanel()" id="panelToggle">📚 Kilder</button>
+  </div>
+</header>
+
+<div class="main">
+  <!-- Chat -->
+  <div class="chat-area">
+    <div class="meldinger" id="meldinger">
+      <div class="tom-tilstand" id="tomTilstand">
+        <div class="stor-logo">ℓ</div>
+        <h2>Din private kunnskapsbase</h2>
+        <p>Spør om noe fra notatene dine. Alt kjører lokalt på din maskin.</p>
+        <div class="forslag-grid" id="forslagGrid">
+          <button class="forslag-knapp" onclick="brukForslag(this)">Hva vet jeg om maskinlæring?</button>
+          <button class="forslag-knapp" onclick="brukForslag(this)">Oppsummer prosjektnotatene mine</button>
+          <button class="forslag-knapp" onclick="brukForslag(this)">Finn notater om planlegging</button>
+          <button class="forslag-knapp" onclick="brukForslag(this)">Hva har jeg skrevet om mål?</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-omrade">
+      <div class="input-wrapper">
+        <textarea
+          id="inputTekst"
+          placeholder="Still et spørsmål om notatene dine..."
+          rows="1"
+          onkeydown="handleKeydown(event)"
+          oninput="autoresize(this)"
+        ></textarea>
+        <button class="send-knapp" id="sendKnapp" onclick="sendMelding()" title="Send (Enter)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 8h12M8 2l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">Enter for send &nbsp;·&nbsp; Shift+Enter for ny linje &nbsp;·&nbsp; <span id="chunkInfo"></span></div>
+    </div>
+  </div>
+
+  <!-- Kilde-panel -->
+  <div class="kilde-panel" id="kildePanel">
+    <div class="panel-header">
+      <span>Hentet kontekst</span>
+      <button onclick="togglePanel()" title="Lukk">✕</button>
+    </div>
+    <div class="kilder-liste" id="kilderListe">
+      <div class="ingen-kilder">Kildene fra dine notater vises her etter første spørsmål.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = '';
+  let meldingsHistorikk = [];
+  let erAktiv = false;
+  let gjeldendeMod = '';
+  let panelApen = true;
+
+  // ── Init ──
+  async function init() {
+    await sjekkStatus();
+    await hentModeller();
+  }
+
+  async function sjekkStatus() {
+    const dot = document.getElementById('statusDot');
+    const label = document.getElementById('statusLabel');
+    try {
+      const resp = await fetch('/api/helse');
+      const data = await resp.json();
+
+      if (data.ollama_tilkoblet && data.embedding_modell) {
+        dot.className = 'status-dot online';
+        label.textContent = `${data.antall_chunks} chunks`;
+        document.getElementById('chunkInfo').textContent = `${data.antall_chunks} chunks indeksert`;
+      } else {
+        dot.className = 'status-dot error';
+        label.textContent = data.ollama_tilkoblet ? 'Ollama ok' : 'Ollama frakoblet';
+      }
+    } catch {
+      dot.className = 'status-dot error';
+      label.textContent = 'server frakoblet';
+    }
+  }
+
+  async function hentModeller() {
+    const velger = document.getElementById('modellVelger');
+    try {
+      const resp = await fetch('/api/modeller');
+      const data = await resp.json();
+      velger.innerHTML = '';
+      if (data.modeller.length === 0) {
+        velger.innerHTML = '<option value="llama3">llama3</option>';
+      } else {
+        data.modeller.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m; opt.textContent = m;
+          velger.appendChild(opt);
+        });
+      }
+      gjeldendeMod = velger.value;
+      velger.onchange = () => { gjeldendeMod = velger.value; };
+    } catch {
+      velger.innerHTML = '<option value="llama3">llama3</option>';
+    }
+  }
+
+  // ── UI ──
+  function togglePanel() {
+    panelApen = !panelApen;
+    document.getElementById('kildePanel').classList.toggle('skjult', !panelApen);
+    document.getElementById('panelToggle').textContent = panelApen ? '📚 Kilder' : '📚';
+  }
+
+  function autoresize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+  }
+
+  function brukForslag(knapp) {
+    document.getElementById('inputTekst').value = knapp.textContent;
+    sendMelding();
+  }
+
+  function handleKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMelding();
+    }
+  }
+
+  function leggTilMelding(rolle, innhold) {
+    const tomt = document.getElementById('tomTilstand');
+    if (tomt) tomt.remove();
+
+    const container = document.getElementById('meldinger');
+    const erBruker = rolle === 'user';
+
+    const div = document.createElement('div');
+    div.className = `melding ${erBruker ? 'bruker' : 'assistent'}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = `avatar ${erBruker ? 'bruker-avatar' : 'ai-avatar'}`;
+    avatar.textContent = erBruker ? '👤' : 'ℓ';
+
+    const boble = document.createElement('div');
+    boble.className = 'boble';
+    boble.innerHTML = formaterTekst(innhold);
+
+    div.appendChild(avatar);
+    div.appendChild(boble);
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+
+    return boble;
+  }
+
+  function formaterTekst(tekst) {
+    return tekst
+      .split('\n\n').map(avsnitt => `<p>${avsnitt.replace(/\n/g, '<br>')}</p>`).join('');
+  }
+
+  function visKilder(kilder) {
+    const liste = document.getElementById('kilderListe');
+    if (!kilder || kilder.length === 0) {
+      liste.innerHTML = '<div class="ingen-kilder">Ingen spesifikt relevante chunks ble funnet.</div>';
+      return;
+    }
+
+    liste.innerHTML = `<div class="chunks-badge">${kilder.length} chunks hentet</div>`;
+
+    kilder.forEach((kilde, i) => {
+      const kort = document.createElement('div');
+      kort.className = 'kilde-kort';
+      const score = Math.round(kilde.relevans * 100);
+      kort.innerHTML = `
+        <div class="kilde-tittel">[${i+1}] ${kilde.tittel}</div>
+        <div class="kilde-fil">${kilde.fil || 'ukjent fil'}</div>
+        <div class="kilde-utdrag">${kilde.utdrag}</div>
+        <div class="kilde-score">
+          <div class="score-bar"><div class="score-fill" style="width:${score}%"></div></div>
+          <span class="score-tall">${score}%</span>
+        </div>
+      `;
+      liste.appendChild(kort);
+    });
+
+    if (!panelApen) {
+      panelApen = true;
+      document.getElementById('kildePanel').classList.remove('skjult');
+    }
+  }
+
+  // ── Sending ──
+  async function sendMelding() {
+    if (erAktiv) return;
+    const input = document.getElementById('inputTekst');
+    const tekst = input.value.trim();
+    if (!tekst) return;
+
+    erAktiv = true;
+    document.getElementById('sendKnapp').disabled = true;
+    input.value = '';
+    input.style.height = 'auto';
+
+    leggTilMelding('user', tekst);
+    meldingsHistorikk.push({ role: 'user', content: tekst });
+
+    const aiBoble = leggTilMelding('assistant', '');
+    aiBoble.classList.add('skriving');
+    let aiTekst = '';
+
+    document.getElementById('kilderListe').innerHTML =
+      '<div class="ingen-kilder">Søker i notater...</div>';
+
+    try {
+      const resp = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          meldinger: meldingsHistorikk,
+          modell: gjeldendeMod || 'llama3',
+          top_k: 5,
+        }),
+      });
+
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const tekster = decoder.decode(value);
+        for (const linje of tekster.split('\n')) {
+          if (!linje.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(linje.slice(6));
+            if (data.kilder) {
+              visKilder(data.kilder);
+            } else if (data.token) {
+              aiTekst += data.token;
+              aiBoble.innerHTML = formaterTekst(aiTekst);
+              document.getElementById('meldinger').scrollTop = 9999;
+            } else if (data.error) {
+              aiBoble.innerHTML = `<div class="feil-melding">⚠️ ${data.error}</div>`;
+            } else if (data.done) {
+              break;
+            }
+          } catch { /* ignorer JSON-feil */ }
+        }
+      }
+
+      aiBoble.classList.remove('skriving');
+      if (aiTekst) {
+        meldingsHistorikk.push({ role: 'assistant', content: aiTekst });
+      }
+
+    } catch (err) {
+      aiBoble.classList.remove('skriving');
+      aiBoble.innerHTML = `<div class="feil-melding">⚠️ Feil: ${err.message}. Er serveren kjørende?</div>`;
+    } finally {
+      erAktiv = false;
+      document.getElementById('sendKnapp').disabled = false;
+      document.getElementById('inputTekst').focus();
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

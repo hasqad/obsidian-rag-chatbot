@@ -1,0 +1,22 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Vector database
+chroma_db/
+
+# macOS
+.DS_Store
+
+# Archives
+*.zip
+
+# Environment variables
+.env
