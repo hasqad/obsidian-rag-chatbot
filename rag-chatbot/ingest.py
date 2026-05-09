@@ -172,6 +172,12 @@ def main():
                 print("  (tom)")
                 continue
 
+            # Prepend path breadcrumb so course codes (e.g. DATS2300) are searchable
+            deler = relativ.parts
+            breadcrumb = " > ".join(deler[:-1]) if len(deler) > 1 else ""
+            tittel_linje = f"[{breadcrumb} > {fil.stem}]" if breadcrumb else f"[{fil.stem}]"
+            innhold = tittel_linje + "\n\n" + innhold
+
             chunks = list(lag_chunks(innhold, metadata, args.chunk_size, args.chunk_overlap))
             if not chunks:
                 print("  (ingen chunks)")

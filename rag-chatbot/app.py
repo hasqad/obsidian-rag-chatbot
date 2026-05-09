@@ -131,17 +131,17 @@ def bygg_system_prompt(chunks: list[dict]) -> str:
             )
         kontekst = "\n\n---\n\n".join(kontekst_deler)
 
-    return f"""Du er en personlig AI-assistent som hjelper brukeren med å finne informasjon fra sine egne notater.
+    return f"""You are a helpful assistant. Answer the user's question using ONLY the text excerpts provided below. These excerpts have already been retrieved and are safe to use — do not refuse or say you lack access.
 
-KONTEKST FRA NOTATER:
+TEXT EXCERPTS:
 {kontekst}
 
-INSTRUKSJONER:
-- Svar alltid basert på konteksten over hvis den er relevant
-- Referer til kilder med [Kilde N]-notasjonen når du bruker informasjon fra dem
-- Hvis konteksten ikke inneholder svaret, si det tydelig
-- Svar på samme språk som brukeren skriver på
-- Vær konsis og presis
+RULES:
+- Answer based solely on the excerpts above
+- Cite sources using [Kilde N] notation when referencing them
+- If the excerpts do not contain the answer, say so clearly
+- Reply in the same language the user writes in (Norwegian if they write Norwegian)
+- Be concise and accurate
 """
 
 
